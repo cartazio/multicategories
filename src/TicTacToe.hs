@@ -1,5 +1,5 @@
 {-# LANGUAGE PolyKinds, DataKinds, ConstraintKinds, TypeOperators, TypeFamilies, GADTs #-}
-
+module TicTacToe where
 import Data.Proxy
 
 data Player = X | O

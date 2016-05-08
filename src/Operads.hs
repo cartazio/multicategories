@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeOperators, KindSignatures, DataKinds, TypeFamilies, GADTs, RankNTypes, DeriveFunctor #-}
+module Operads where
 import Control.Comonad
 import Data.Constraint
 import Data.Semigroupoid
@@ -24,7 +25,7 @@ instance Functor (Vec n) where
   fmap _ VNil = VNil
 
 data Forest f n m where
-  Nil :: Forest f Z Z 
+  Nil :: Forest f Z Z
   Cons :: f n -> Forest f i o -> Forest f (n + i) (S o)
 
 instance Operad f => Semigroupoid (Forest f)
@@ -32,7 +33,7 @@ instance Operad f => Semigroupoid (Forest f)
 class Operad (f :: Nat -> *) where
   ident :: f (S Z)
   compose :: f n -> Forest f m n -> f m
-  
+
 data M f a where
    M :: f n -> Vec n a -> M f a
 
