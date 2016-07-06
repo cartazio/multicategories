@@ -183,22 +183,27 @@ idents RNil      = Nil
 
 -- | generators for the symmetric groupoid Sigma_k
 data Swap :: [a] -> [a] -> * where
+  Zero :: Swap '[]  '[]
   Swap :: Rec Proxy bs -> Swap (a ': b ': bs) (b ': a ': bs)
   Skip :: Swap as bs -> Swap (a ': as) (a ': bs)
 
 instance Graded Swap where
+  grade  Zero = RNil
   grade (Swap as) = Proxy :& Proxy :& as
   grade (Skip as) = Proxy :& grade as
 
 flop :: Swap as bs -> Swap bs as
+flop  Zero     = Zero
 flop (Swap bs) = Swap bs
 flop (Skip as) = Skip (flop as)
 
-swapRec :: Rec f (a ': as) -> Swap (b ': bs) (a ': as) -> Rec f (b ': bs)
+swapRec :: Rec f as -> Swap bs  as -> Rec f bs
+swapRec RNil            Zero = RNil
 swapRec (i :& is)      (Skip s) = i :& swapRec is s
 swapRec (i :& j :& is) (Swap _) = j :& i :& is
 
 unswapRec :: Rec f as -> Swap as bs -> Rec f bs
+unswapRec  RNil           Zero    = RNil
 unswapRec (i :& is)      (Skip s) = i :& unswapRec is s
 unswapRec (i :& j :& is) (Swap _) = j :& i :& is
 
