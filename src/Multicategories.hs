@@ -8,6 +8,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+--- remove these once things are working better
+{-# OPTIONS_GHC -Wno-unused-imports -Wno-missing-methods #-}
+
 -- |
 -- Multicategories and Polycategories
 module Multicategories where
@@ -92,18 +95,18 @@ splitRec (_ :& is) (a :& as) = case splitRec is as of
   (l,r) -> (a :& l, r)
 
 takeRec :: forall f g h is js. Rec f is -> Rec g js -> Rec h (is ++ js) -> Rec h is
-takeRec is js ijs = fst $ (splitRec is ijs :: (Rec h is, Rec h js))
+takeRec is _js ijs = fst $ (splitRec is ijs :: (Rec h is, Rec h js))
 
 dropRec :: Rec f is -> Rec g (is ++ js) -> Rec g js
 dropRec is ijs = snd $ splitRec is ijs
 
-foldrRec :: (forall i is. f i -> r is -> r (i ': is)) -> r '[] -> Rec f is -> r is
+foldrRec :: (forall i iz. f i -> r iz -> r (i ': iz)) -> r '[] -> Rec f is -> r is
 foldrRec _ z RNil = z
 foldrRec f z (a :& as) = f a (foldrRec f z as)
 
 traverseRec :: Applicative m => (forall i. f i -> m (g i)) -> Rec f is -> m (Rec g is)
 traverseRec f (a :& as) = (:&) <$> f a <*> traverseRec f as
-traverseRec f RNil = pure RNil
+traverseRec _f RNil = pure RNil
 
 --------------------------------------------------------------------------------
 -- * Graded structures
@@ -134,6 +137,7 @@ data Forest :: ([k] -> k -> *) -> [k] -> [k] -> * where
 
 infixr 5 :-, :&
 
+
 foldrForest :: (forall i o is. f i o -> r is -> r (i ++ is)) -> r '[] -> Forest f m n -> r m
 foldrForest _ z Nil = z
 foldrForest f z (a :- as) = f a (foldrForest f z as)
@@ -142,8 +146,8 @@ instance Graded f => Graded (Forest f) where
   grade = foldrForest (\a r -> grade a `rappend` r) RNil
 
 splitForest :: forall f g ds is js os r. Rec f is -> Forest g js os -> Forest g ds (is ++ js) -> (forall bs cs. (ds ~ (bs ++ cs)) => Forest g bs is -> Forest g cs js -> r) -> r
-splitForest RNil bs as k = k Nil as
-splitForest (i :& is) bs ((j :: g as o) :- js) k = splitForest is bs js $ \ (l :: Forest g bs as1) (r :: Forest g cs js) ->
+splitForest RNil _bs as k = k Nil as
+splitForest (_i :& is) bs ((j :: g as o) :- js) k = splitForest is bs js $ \ (l :: Forest g bs as1) (r :: Forest g cs js) ->
   case appendAssocAxiom (Proxy :: Proxy as) (Proxy :: Proxy bs) (Proxy :: Proxy cs) of
     Dict -> k (j :- l) r
 
@@ -170,7 +174,7 @@ instance Multicategory f => PRO (Forest f) where
     Dict -> l :- pro ls rs
 
 idents :: Multicategory f => Rec Proxy is -> Forest f is is
-idents (a :& as) = ident :- idents as
+idents (_a :& as) = ident :- idents as
 idents RNil      = Nil
 
 --------------------------------------------------------------------------------
@@ -190,7 +194,7 @@ flop :: Swap as bs -> Swap bs as
 flop (Swap bs) = Swap bs
 flop (Skip as) = Skip (flop as)
 
-swapRec :: Rec f as -> Swap bs as -> Rec f bs
+swapRec :: Rec f (a ': as) -> Swap (b ': bs) (a ': as) -> Rec f (b ': bs)
 swapRec (i :& is)      (Skip s) = i :& swapRec is s
 swapRec (i :& j :& is) (Swap _) = j :& i :& is
 
@@ -209,16 +213,22 @@ data Coselector a as bs where
   Cohead :: Rec Proxy as -> Coselector a (a ': as) as
   Cotail :: Coselector a as bs -> Coselector a (b ': as) (b ': bs)
 
+
+
 -- The symmetric groupoid
 data Sigma as bs where
   SNil :: Sigma '[] '[]
   SCons :: Coselector a as bs -> Sigma as bs -> Sigma as (a ': bs)
+{-
+NB the symmetric groupoid on multicategories
+-}
 
 coheads :: Rec Proxy as -> Sigma as as
 coheads RNil = SNil
 -- coheads aas@(Proxy :& as) = Cohead as `SCons` coheads as
 
-instance Semigroupoid Sigma
+instance Semigroupoid Sigma where
+   SNil `o` SNil = SNil
 instance Groupoid Sigma
 instance PRO Sigma
 instance Graded Sigma where

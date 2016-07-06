@@ -57,7 +57,7 @@ library
 
   -- Modules included in this library but not exported.
   -- other-modules:
-
+  ghc-options: -Wall -Wno-redundant-constraints
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    DataKinds, FlexibleInstances, GADTs, KindSignatures, MultiParamTypeClasses, PolyKinds, RankNTypes, ScopedTypeVariables, TypeFamilies, TypeOperators, DeriveFunctor, ConstraintKinds
 
